@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: LevelConfig
   m_EditorClassIdentifier: 
   _levelName: First Level
+  _background: {fileID: 21300000, guid: 0edffef8feb1bc94eb77c2baa9a228e3, type: 3}
   _width: 8
   _heigth: 8
   _cellSize: 1
@@ -21,3 +22,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 49b975bad02c6284d918d2dc551ef4c2, type: 2}
   - {fileID: 11400000, guid: 7daaac7f02feb4343af7dd2b2282eee4, type: 2}
   - {fileID: 11400000, guid: 76287669d1f6e9a4981755eba116cd55, type: 2}
+  - {fileID: 11400000, guid: da4b656102873ed4b9977d4fc6494c9c, type: 2}

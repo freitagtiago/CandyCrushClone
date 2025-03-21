@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,5 +16,10 @@ public class CellObject : MonoBehaviour
     public CellObjectSO GetCellObjectSO()
     {
         return _cellObject;
+    }
+
+    public void Destroy()
+    {
+        Destroy(gameObject);
     }
 }

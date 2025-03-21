@@ -8,6 +8,7 @@ using Random = UnityEngine.Random;
 public class LevelConfigSO : ScriptableObject
 {
     public string _levelName;
+    public Sprite _background;
     public int _width;
     public int _heigth;
     public float _cellSize = 1f;
