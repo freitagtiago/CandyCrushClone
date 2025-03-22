@@ -6,6 +6,8 @@ Este projeto é um clone do popular jogo **Candy Crush**, desenvolvido no Unity.
 
 O jogo conta com **3 fases pré-configuradas**, onde é possível ajustar diversos parâmetros, como tempo de jogo, pontuação das peças, dimensões da grid e peças disponíveis, tudo através de **ScriptableObjects**. Isso permite que game designers façam ajustes sem a necessidade de alterar o código.
 
+Para criação de novas fases, basta apenas criar/duplicar um **ScriptableObjects** na pasta `Resources/LevelConfig`, ele será carregado automaticamente pela cena de Lobby, sem nenhuma necessidade de vínculo adicional.
+
 Além disso, o projeto utiliza técnicas de **Object Pooling** para otimizar o desempenho, tanto para as células da grid quanto para os efeitos visuais.
 
 ---
