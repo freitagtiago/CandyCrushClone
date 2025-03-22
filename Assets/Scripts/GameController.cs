@@ -5,37 +5,149 @@ using DG.Tweening;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
 
-public class Level : MonoBehaviour
+public class GameController : MonoBehaviour
 {
     [SerializeField] private LevelConfigSO _levelConfig;
-    [SerializeField] private CellObject _cellObjectPrefab;
     [SerializeField] private Ease ease = Ease.InQuad;
     [SerializeField] private SpriteRenderer _backgroundRenderer;
+    [SerializeField] private UIHandler _uiHandler;
+    [SerializeField] private Transform _gridObjectTransform;
+
+    [Header("Cell")]
+    [SerializeField] private CellObject _cellObjectPrefab;
+    private Queue<CellObject> _cellObjectPool = new Queue<CellObject>();
+    [SerializeField] private int _cellPoolSize = 20;
+
+    [Header("VFX")]
     [SerializeField] private List<GameObject> _matchVFXPrefabList = new List<GameObject>();
+    private Queue<GameObject> _vfxPool = new Queue<GameObject>();
+    [SerializeField] private int _vfxPoolSize = 10;
 
     private GridSystem<GridObject<CellObject>> _grid;
     private InputHandler _inputHandler;
-    private AudioPlayer _audioPlayer;
     private Vector2Int _selectedCellPosition = Vector2Int.one * -1;
 
-    private bool _canSelect = true;
+    private int _currentScore = 0;
+    private bool _canSelect = false;
     
     private void Awake()
     {
         _inputHandler = FindObjectOfType<InputHandler>();
-        _audioPlayer = FindObjectOfType<AudioPlayer>(); ;
-    }
-
-    private void Start()
-    {
-        SetupGrid();
-        _inputHandler.Fire += OnSelectCell;
+        _levelConfig = LevelLoader.Instance.GetCurrentLevel();
     }
 
     private void OnDisable()
     {
+        if(_currentScore > PlayerPrefs.GetInt($"{_levelConfig._levelName}_max_score", 0))
+        {
+            PlayerPrefs.SetInt($"{_levelConfig._levelName}_max_score", _currentScore);
+        }
+        
         _inputHandler.Fire -= OnSelectCell;
     }
+
+    private void Start()
+    {
+        InitializeCellObjectPool();
+        InitializeVFXPool();
+
+        SetupGrid();
+        _inputHandler.Fire += OnSelectCell;
+        StartCoroutine(StartLevel());
+    }
+
+    private void Update()
+    {
+        CheckWinCondition();
+    }
+
+    private IEnumerator StartLevel()
+    {
+        _uiHandler.EnableWaitMessage();
+        yield return new WaitForSeconds(2f);
+        StartCoroutine(_uiHandler.EnableStartMessage());
+        _uiHandler.RunTimer(_levelConfig._levelTime);
+        _canSelect = true;
+    }
+
+    private void CheckWinCondition()
+    {
+        if(_currentScore > _levelConfig._scoreToWin)
+        {
+            _canSelect = false;
+            _uiHandler.StopTimer();
+            _uiHandler.EnableGameOverPanel(true);
+        }else if (_uiHandler._elapsedTime > _levelConfig._levelTime)
+        {
+            _canSelect = false;
+            _uiHandler.StopTimer();
+            _uiHandler.EnableGameOverPanel(false);
+        }
+    }
+
+    #region POOL Methods
+    private void InitializeCellObjectPool()
+    {
+        for (int i = 0; i < _cellPoolSize; i++)
+        {
+            CellObject cellObject = Instantiate(_cellObjectPrefab, _gridObjectTransform);
+            cellObject.gameObject.SetActive(false);
+            _cellObjectPool.Enqueue(cellObject);
+        }
+    }
+
+    private void InitializeVFXPool()
+    {
+        for (int i = 0; i < _vfxPoolSize; i++)
+        {
+            GameObject vfx = Instantiate(_matchVFXPrefabList[Random.Range(0, _matchVFXPrefabList.Count)], _gridObjectTransform);
+            vfx.SetActive(false);
+            _vfxPool.Enqueue(vfx);
+        }
+    }
+
+    private void ReturnCellObjectToPool(CellObject cellObject)
+    {
+        cellObject.gameObject.SetActive(false);
+        _cellObjectPool.Enqueue(cellObject);
+    }
+
+    private CellObject GetCellObjectFromPool()
+    {
+        if (_cellObjectPool.Count > 0)
+        {
+            return _cellObjectPool.Dequeue();
+        }
+        else
+        {
+            CellObject cellObject = Instantiate(_cellObjectPrefab, _gridObjectTransform);
+            cellObject.gameObject.SetActive(false);
+            return cellObject;
+        }
+    }
+
+    private GameObject GetVFXFromPool()
+    {
+        if (_vfxPool.Count > 0)
+        {
+            return _vfxPool.Dequeue();
+        }
+        else
+        {
+            GameObject vfx = Instantiate(_matchVFXPrefabList[Random.Range(0, _matchVFXPrefabList.Count)], _gridObjectTransform);
+            vfx.SetActive(false);
+            return vfx;
+        }
+    }
+
+    private IEnumerator ReturnVFXToPoolAfterDelay(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        vfx.SetActive(false);
+        _vfxPool.Enqueue(vfx);
+    }
+
+    #endregion
 
     private void SetupGrid()
     {
@@ -55,12 +167,18 @@ public class Level : MonoBehaviour
 
     private void FillWithCellObject(int x, int y)
     {
-        CellObject cellObject = Instantiate(_cellObjectPrefab, _grid.GetWorldPositionCenter(x, y), Quaternion.identity, transform);
-        cellObject.Setup(_levelConfig.GetRandomObject());
-        GridObject<CellObject> gridObject = new GridObject<CellObject>();
-        gridObject.SetupGridObject(_grid, x, y);
-        gridObject.SetCellObject(cellObject);
-        _grid.SetCellValue(x, y, gridObject);
+        CellObject cellObject = GetCellObjectFromPool();
+        if (cellObject != null)
+        {
+            cellObject.transform.position = _grid.GetWorldPositionCenter(x, y);
+            cellObject.gameObject.SetActive(true);
+            cellObject.Setup(_levelConfig.GetRandomObject());
+
+            GridObject<CellObject> gridObject = new GridObject<CellObject>();
+            gridObject.SetupGridObject(_grid, x, y);
+            gridObject.SetCellObject(cellObject);
+            _grid.SetCellValue(x, y, gridObject);
+        }
     }
 
     private void OnSelectCell()
@@ -118,7 +236,7 @@ public class Level : MonoBehaviour
     private void SelectCell(Vector2Int selectedCellPosition)
     {
         _selectedCellPosition = selectedCellPosition;
-        _audioPlayer.PlaySelectSFX();
+        AudioPlayer.Instance.PlaySelectSFX();
     }
 
     private IEnumerator RunGameLoop(Vector2Int selectedCellPosition, Vector2Int newSelectionPosition)
@@ -142,7 +260,7 @@ public class Level : MonoBehaviour
                 if (_grid.GetCellValue(x, y) == null)
                 {
                     FillWithCellObject(x, y);
-                    _audioPlayer.PlayGenerateCellSFX();
+                    AudioPlayer.Instance.PlayGenerateCellSFX();
                     yield return new WaitForSeconds(0.1f);
                 }
             }
@@ -176,7 +294,7 @@ public class Level : MonoBehaviour
                             CellObject cellObject = cellBelow.GetCellObject();
                             Vector3 targetPosition = _grid.GetWorldPositionCenter(x, y);
                             cellObject.transform.DOLocalMove(targetPosition, 0.5f).SetEase(ease);
-                            _audioPlayer.PlayCellFallSFX();
+                            AudioPlayer.Instance.PlayCellFallSFX();
                             yield return new WaitForSeconds(0.1f);
                             break;
                         }
@@ -188,29 +306,34 @@ public class Level : MonoBehaviour
 
     private IEnumerator HandleMatches(List<Vector2Int> matches)
     {
-        foreach(Vector2Int match in matches)
+        foreach (Vector2Int match in matches)
         {
             CellObject cell = _grid.GetCellValue(match.x, match.y).GetCellObject();
+            int pointsToGet = cell.GetCellObjectSO()._points;
+            _currentScore += pointsToGet;
+            _uiHandler.UpdateScore(pointsToGet);
             _grid.SetCellValue(match.x, match.y, null);
-            ApplyMatchVFX(match);
 
-            cell.transform.DOPunchScale(Vector3.one * 0.1f
-                                        ,0.1f
-                                        , 1
-                                        , 0.5f);
+            cell.transform.DOPunchScale(Vector3.one * 0.1f, 0.1f, 1, 0.5f);
 
             yield return new WaitForSeconds(0.1f);
-            cell.Destroy();
+
+            AudioPlayer.Instance.PlayDestroyCellSFX();
+            ApplyMatchVFX(match);
+            ReturnCellObjectToPool(cell);
         }
-        _audioPlayer.PlayDestroyCellSFX();
+        AudioPlayer.Instance.PlayDestroyCellSFX();
     }
 
     private void ApplyMatchVFX(Vector2Int position)
     {
-        //POLLING
-        GameObject vfx = Instantiate(_matchVFXPrefabList[Random.Range(0, _matchVFXPrefabList.Count)], transform);
-        vfx.transform.position = _grid.GetWorldPositionCenter(position.x, position.y);
-        Destroy(vfx, 1f);
+        GameObject vfx = GetVFXFromPool();
+        if (vfx != null)
+        {
+            vfx.transform.position = _grid.GetWorldPositionCenter(position.x, position.y);
+            vfx.SetActive(true);
+            StartCoroutine(ReturnVFXToPoolAfterDelay(vfx, 1f));
+        }
     }
 
     private List<Vector2Int> FindCellMatches()
@@ -271,15 +394,15 @@ public class Level : MonoBehaviour
         GridObject<CellObject> selectedCell = _grid.GetCellValue(selectedCellPosition.x, selectedCellPosition.y);
         GridObject<CellObject> newSelection = _grid.GetCellValue(newSelectionPosition.x, newSelectionPosition.y);
 
+        _grid.SetCellValue(selectedCellPosition.x, selectedCellPosition.y, newSelection);
+        _grid.SetCellValue(newSelectionPosition.x, newSelectionPosition.y, selectedCell);
+
         selectedCell.GetCellObject().transform
-                .DOLocalMove(_grid.GetWorldPositionCenter(newSelection._xPosition, newSelection._yPosition), 0.5f)
+                .DOLocalMove(_grid.GetWorldPositionCenter(newSelectionPosition.x, newSelectionPosition.y), 0.5f)
                 .SetEase(ease);
         newSelection.GetCellObject().transform
-            .DOLocalMove(_grid.GetWorldPositionCenter(selectedCell._xPosition, selectedCell._yPosition), 0.5f)
+            .DOLocalMove(_grid.GetWorldPositionCenter(selectedCellPosition.x, selectedCellPosition.y), 0.5f)
             .SetEase(ease);
-
-        _grid.SetCellValue(selectedCell._xPosition, selectedCell._yPosition, newSelection);
-        _grid.SetCellValue(newSelection._xPosition, newSelection._yPosition, selectedCell);
 
         yield return new WaitForSeconds(0.5f);
     }

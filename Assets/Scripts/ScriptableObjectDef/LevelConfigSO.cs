@@ -8,6 +8,8 @@ using Random = UnityEngine.Random;
 public class LevelConfigSO : ScriptableObject
 {
     public string _levelName;
+    public float _levelTime = 60f;
+    public int _scoreToWin = 500;
     public Sprite _background;
     public int _width;
     public int _heigth;

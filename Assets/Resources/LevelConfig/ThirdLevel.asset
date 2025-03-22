@@ -10,14 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc8c0a9145cd6a6428579675ef9b7a9c, type: 3}
-  m_Name: LevelConfig
+  m_Name: ThirdLevel
   m_EditorClassIdentifier: 
-  _levelName: First Level
-  _background: {fileID: 21300000, guid: 0edffef8feb1bc94eb77c2baa9a228e3, type: 3}
-  _width: 8
-  _heigth: 8
+  _levelName: "Terceiro N\xEDvel"
+  _levelTime: 60
+  _scoreToWin: 800
+  _background: {fileID: 21300000, guid: 6585dcdfcbabc51498866c74bf61425e, type: 3}
+  _width: 10
+  _heigth: 10
   _cellSize: 1
-  _startPosition: {x: 0, y: 0, z: 0}
+  _startPosition: {x: -1, y: -1.5, z: 0}
   _availableCellObjects:
   - {fileID: 11400000, guid: 49b975bad02c6284d918d2dc551ef4c2, type: 2}
   - {fileID: 11400000, guid: 7daaac7f02feb4343af7dd2b2282eee4, type: 2}

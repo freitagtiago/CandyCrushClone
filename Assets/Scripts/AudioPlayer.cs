@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class AudioPlayer : MonoBehaviour
 {
+    public static AudioPlayer Instance;
+
+    [SerializeField] private AudioClip _music;
     [SerializeField] private AudioClip _selectCell;
     [SerializeField] private AudioClip _matchFound;
     [SerializeField] private AudioClip _noMatchFound;
@@ -12,40 +15,50 @@ public class AudioPlayer : MonoBehaviour
     [SerializeField] private AudioClip _cellFalling;
     [SerializeField] private AudioClip _destroyCell;
 
-    private AudioSource _audioSource;
+    [SerializeField] private AudioSource _fxAudioSource;
+    [SerializeField] private AudioSource _musicAudioSource;
 
     private void Awake()
     {
-        _audioSource = GetComponent<AudioSource>();
+        if(Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(this.gameObject);
+            return;
+        }
+        DontDestroyOnLoad(this.gameObject);
     }
 
     public void PlaySelectSFX()
     {
-        _audioSource.PlayOneShot(_selectCell);
+        _fxAudioSource.PlayOneShot(_selectCell);
     }
 
     public void PlayMatchSFX()
     {
-        _audioSource.PlayOneShot(_matchFound);
+        _fxAudioSource.PlayOneShot(_matchFound);
     }
 
     public void PlayNoMatchSFX()
     {
-        _audioSource.PlayOneShot(_noMatchFound);
+        _fxAudioSource.PlayOneShot(_noMatchFound);
     }
 
     public void PlayGenerateCellSFX()
     {
-        _audioSource.PlayOneShot(_generateCell);
+        _fxAudioSource.PlayOneShot(_generateCell);
     }
 
     public void PlayDestroyCellSFX()
     {
-        _audioSource.PlayOneShot(_destroyCell);
+        _fxAudioSource.PlayOneShot(_destroyCell);
     }
 
     public void PlayCellFallSFX()
     {
-        _audioSource.PlayOneShot(_cellFalling);
+        _fxAudioSource.PlayOneShot(_cellFalling);
     }
 }

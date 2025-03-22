@@ -20,7 +20,6 @@ public class InputHandler : MonoBehaviour
         }
         _selectAction = _playerInputAction.actions["Select"];
         _fireAction = _playerInputAction.actions["Fire"];
-        //_fireAction.performed += OnFire;
     }
 
     public Vector2 GetSelectedPosition()
@@ -36,8 +35,4 @@ public class InputHandler : MonoBehaviour
         }
     }
 
-    private void OnDisable()
-    {
-        //_fireAction.performed -= OnFire;
-    }
 }

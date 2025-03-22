@@ -1,5 +1,6 @@
 using System;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 
 public class GridSystem<T>
@@ -45,7 +46,7 @@ public class GridSystem<T>
 
         _coordinateConverter = coordinateConverter == null ? new VerticalConverter() : coordinateConverter;
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR 
         DrawGridLines();
 #endif
     }
